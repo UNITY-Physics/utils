@@ -22,13 +22,13 @@ This repository serves as a **single source of truth** for reusable components t
 To include the latest version in a Docker image:
 
 ```dockerfile
-RUN git clone --depth 1 https://github.com/UNITY-Physics/utils.git /app/shared_utils
+RUN git clone --depth 1 https://github.com/UNITY-Physics/utils.git /app/shared
 ````
 
 Or clone a specific tag:
 
 ```dockerfile
-RUN git clone --branch v1.0.0 https://github.com/UNITY-Physics/utils.git /app/shared_utils
+RUN git clone --branch v1.0.0 https://github.com/UNITY-Physics/utils.git /app/shared
 ```
 
 ---
@@ -38,14 +38,14 @@ RUN git clone --branch v1.0.0 https://github.com/UNITY-Physics/utils.git /app/sh
 Add the utils as a submodule in your repo:
 
 ```bash
-git submodule add https://github.com/UNITY-Physics/utils.git shared_utils
+git submodule add https://github.com/UNITY-Physics/utils.git shared
 ```
 
 Then in your Dockerfile:
 
 ```dockerfile
 ENV FLYWHEEL="/flywheel/v0"
-COPY shared_utils/ $FLYWHEEL/utils/
+COPY shared/utils/ $FLYWHEEL/utils/
 ```
 
 To update the submodule later:
