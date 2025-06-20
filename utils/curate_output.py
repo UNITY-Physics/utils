@@ -31,8 +31,7 @@ def get_age(session, dicom_header):
     # Should contain the DOB in the dicom header
     # Some projects may have DOB removed, but may have age at scan in the subject container
 
-    age_source = None
-    age = None
+    age_source, age = None, None
 
     # Check if age is in custom session info
     if session.info.get('age_at_scan_months', None) != None:
@@ -88,19 +87,25 @@ def get_age(session, dicom_header):
 
                 except Exception as e:
                     print(f"Error parsing dates from dicom: {e}")
-                    age = 'NA'
-                    age_source = 'NA'
+                    age_source, age = None, None
 
                 # Adjust if the day in series_dt is earlier than the day in dob_dt
                 if series_dt.day < dob_dt.day:
-                    age = 'NA'
-                    age_source = 'NA'
+                    age_source, age = None, None
 
             else:
                 print("No valid birthdate or series date found in dicom header. Setting age to NA.")
-                age = 'NA'
-                age_source = 'NA'
+                age_source, age = None, None
+              
 
+        try:
+            age = float(age)
+            if age <= 0 or age > 1200:
+                print(f"Age out of expected bounds: {age}")
+                age = None
+        except (ValueError, TypeError):
+            log.error(f"Age not found or not a valid number: {age}")
+            age = None
 
     print(age, age_source)
     return age, age_source
@@ -109,7 +114,7 @@ def demo(context):
 
     # Initialize variables
     data = []
-    age_in_months = 'NA'
+    age_in_months = None
     sex = 'NA'
     
     # Read config.json file
