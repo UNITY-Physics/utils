@@ -34,14 +34,14 @@ def get_age(session, dicom_header):
     age_source, age = None, None
 
     # Check if age is in custom session info
-    if session.info.get('age_at_scan_months', None) != None:
+    if session.info.get('age_at_scan_months', None) != None and session.info.get('age_at_scan_months') != 0:
         age_source = 'custom_info'
-        print(age, age_source)
 
     else:
-        age = re.sub('\D', '', dicom_header.info.get('PatientAge', None))
+       
         # Check for PatientAge in the DICOM header
-        if 'PatientAge' != None :
+        if dicom_header.info.get('PatientAge', None) is not None:
+            age = re.sub('\D', '', dicom_header.info.get('PatientAge', None))
             print("No custom demographic age uploaded in session info! Trying PatientAge from dicom...")
             age_raw = dicom_header.info['PatientAge']
 
@@ -77,9 +77,8 @@ def get_age(session, dicom_header):
                     series_dt = datetime.strptime(series_date, '%Y%m%d')
                     dob_dt = datetime.strptime(dob, '%Y%m%d')
 
-                    dob_dt = datetime.strptime(dob, '%Y%m%d')
-                    series_date_dt = datetime.strptime(series_date, '%Y%m%d')
-                    age_days = (series_date_dt - dob_dt).days
+                
+                    age_days = (series_dt - dob_dt).days
 
                     # Convert days to months
                     age = age_days // 30
