@@ -103,8 +103,8 @@ def get_age(session, dicom_header):
             if age <= 0 or age > 1200:
                 print(f"Age out of expected bounds: {age}")
                 age = None
-        except (ValueError, TypeError):
-            log.error(f"Age not found or not a valid number: {age}")
+        except Exception as e:
+            log.error(f"Age not found or not a valid number: {age}". format(e))
             age = None
 
     print(age, age_source)
