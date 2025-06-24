@@ -34,50 +34,50 @@ def get_age(session, dicom_header):
     age_source, age = None, None
 
     # Check if age is in custom session info
-    if session.info.get('age_at_scan_months', None) != None and session.info.get('age_at_scan_months') != 0:
+    if session.info.get('age_at_scan_months', None) != None and str(session.info.get('age_at_scan_months')) != "0":
         age_source = 'custom_info'
-
+        age =  session.info.get('age_at_scan_months')
     else:
        
         # Check for PatientAge in the DICOM header
         if dicom_header.info.get('PatientAge', None) is not None:
-            age = re.sub('\D', '', dicom_header.info.get('PatientAge', None))
+            age = re.sub('\D', '', dicom_header.info.get('PatientAge'))
             print("No custom demographic age uploaded in session info! Trying PatientAge from dicom...")
             age_raw = dicom_header.info['PatientAge']
 
             # Parse age and convert to months
             unit = age_raw[-1].upper()  # Extract the unit (D = Days, W = Weeks, M = Months, Y = Years)
             numeric_age = int(re.sub('\D', '', age_raw))  # Remove non-numeric characters
-
+            age_source = 'dicom_age'
             if unit == 'D':  # Days to months
                 age = numeric_age // 30
+               
             elif unit == 'W':  # Weeks to months
                 age = numeric_age // 4
+                
             elif unit == 'M':  # Already in months
                 age = numeric_age
+               
             elif unit == 'Y':  # Years to months
                 age = numeric_age * 12
+               
             else:
-                print("Unknown unit for PatientAge. Setting age to NA.")
-                age = 'NA'
+                print("Unknown unit for PatientAge. Setting age to None.")
+                age_source, age = None, None
 
-            age_source = 'dicom_age'
-
-        # If PatientAge is unavailable or invalid, fallback to PatientBirthDate and SeriesDate
-        dob = dicom_header.info.get('PatientBirthDate', None)
-        series_date = dicom_header.get('SeriesDate', None)
         
-        if age is None or age == 0:
+        elif age is not None or int(age) == 0:
+            # If PatientAge is unavailable or invalid, fallback to PatientBirthDate and SeriesDate
+            dob = dicom_header.info.get('PatientBirthDate', None)
+            series_date = dicom_header.get('SeriesDate', None)
             if dob != None and series_date != None:
-                print("Trying DOB from dicom...")
+                print("Trying DOB from dicom...")    
                 print("WARNING: This may be inaccurate if false DOB was entered at time of scanning!")
                 # Calculate age at scan
                 # Calculate the difference in months
                 try:
                     series_dt = datetime.strptime(series_date, '%Y%m%d')
                     dob_dt = datetime.strptime(dob, '%Y%m%d')
-
-                
                     age_days = (series_dt - dob_dt).days
 
                     # Convert days to months
@@ -93,7 +93,7 @@ def get_age(session, dicom_header):
                     age_source, age = None, None
 
             else:
-                print("No valid birthdate or series date found in dicom header. Setting age to NA.")
+                print("No valid birthdate or series date found in dicom header. Setting age to None.")
                 age_source, age = None, None
               
 
@@ -101,10 +101,10 @@ def get_age(session, dicom_header):
             age = float(age)
             if age <= 0 or age > 1200:
                 print(f"Age out of expected bounds: {age}")
-                age = None
+                age_source, age = None, None
         except Exception as e:
             log.error(f"Age not found or not a valid number: {age}". format(e))
-            age = None
+            age_source, age = None, None
 
     print(age, age_source)
     return age, age_source
@@ -113,7 +113,6 @@ def demo(context):
 
     # Initialize variables
     data = []
-    age_in_months = None
     sex = 'NA'
     
     # Read config.json file
@@ -175,7 +174,7 @@ def demo(context):
     # Should contain the DOB in the dicom header
     # Some projects may have DOB removed, but may have age at scan in the subject container
 
-    sex,age,age_source, scannerSoftwareVersion = None,None,None, None
+    sex,age,age_source, scannerSoftwareVersion = None,None,None, "NA"
     for acq in session_container.acquisitions.iter():
         # print(acq.label)
         acq = acq.reload()
@@ -186,7 +185,7 @@ def demo(context):
                     
                     dicom_header = fw._fw.get_acquisition_file_info(acq.id, file_obj.name)
                     age, age_source = get_age(session, dicom_header)
-                    scannerSoftwareVersion = dicom_header.info.get('SoftwareVersions', None)
+                    scannerSoftwareVersion = dicom_header.info.get('SoftwareVersions', "NA")
 
                     try:
                         sex = session_info.get("sex_at_birth", dicom_header.info.get("PatientSex","NA"))
@@ -200,6 +199,6 @@ def demo(context):
     # Creates DataFrame.  
     demo = pd.DataFrame(data)
 
-    log.info(f"Demographics:  {subject_label} {session_label} {str(age_in_months)} {sex}")
+    log.info(f"Demographics:  {subject_label} {session_label} {age} {sex}")
 
     return demo
