@@ -175,7 +175,7 @@ def demo(context):
     # Should contain the DOB in the dicom header
     # Some projects may have DOB removed, but may have age at scan in the subject container
 
-    sex,age,age_source = None,None,None
+    sex,age,age_source, scannerSoftwareVersion = None,None,None
     for acq in session_container.acquisitions.iter():
         # print(acq.label)
         acq = acq.reload()
