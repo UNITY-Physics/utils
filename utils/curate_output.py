@@ -84,10 +84,16 @@ def get_age(session, dicom_header):
                     age = age_days // 30
                     age_source = 'dicom_DOB'
 
+                except ValueError as ve:
+                    print(f"Caught a ValueError: {ve}")
+                    age_source, age = None, None
+                except TypeError as te:
+                    print(f"Caught a TypeError: {te}")
+                    age_source, age = None, None
                 except Exception as e:
                     print(f"Error parsing dates from dicom: {e}")
                     age_source, age = None, None
-
+        
                 # Adjust if the day in series_dt is earlier than the day in dob_dt
                 if series_dt.day < dob_dt.day:
                     age_source, age = None, None
@@ -102,6 +108,13 @@ def get_age(session, dicom_header):
             if age <= 0 or age > 1200:
                 print(f"Age out of expected bounds: {age}")
                 age_source, age = None, None
+                
+        except ValueError as ve:
+            print(f"Caught a ValueError: {ve}")
+            age_source, age = None, None
+        except TypeError as te:
+            print(f"Caught a TypeError: {te}")
+            age_source, age = None, None
         except Exception as e:
             log.error(f"Age not found or not a valid number: {age}". format(e))
             age_source, age = None, None
@@ -131,7 +144,7 @@ def demo(context):
     subject_id = input_container.parents['subject']
     subject_container = context.client.get(subject_id)
     subject = subject_container.reload()
-    log.info(f"subject label: {subject.label}")
+    log.info(f"Subject label: {subject.label}")
     subject_label = subject.label
 
     # Get the session id from the input file id
@@ -141,7 +154,7 @@ def demo(context):
     session = session_container.reload()
     session_info = session.info
     session_label = session.label
-    log.info(f"session label: {session.label}")
+    log.info(f"Session label: {session.label}")
     
     # -------------------  Get Acquisition label -------------------  #
 
@@ -175,7 +188,8 @@ def demo(context):
     # Some projects may have DOB removed, but may have age at scan in the subject container
 
     sex,age,age_source, scannerSoftwareVersion = None,None,None, "NA"
-    for acq in session_container.acquisitions.iter():
+    for acq in session.acquisitions():
+        print(acq.label)
         # print(acq.label)
         acq = acq.reload()
         if 'T2' in acq.label and 'AXI' in acq.label and 'Segmentation' not in acq.label and 'Align' not in acq.label: 
