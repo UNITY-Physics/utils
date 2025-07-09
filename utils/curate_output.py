@@ -38,44 +38,57 @@ def get_age(session, dicom_header):
         age_source = 'custom_info'
         age =  session.info.get('age_at_scan_months')
     else:
-       
-        # Check for PatientAge in the DICOM header
-        if dicom_header.info.get('PatientAge', None) is not None:
-            age = re.sub('\D', '', dicom_header.info.get('PatientAge'))
-            print("No custom demographic age uploaded in session info! Trying PatientAge from dicom...")
-            age_raw = dicom_header.info['PatientAge']
+        try:
+            print("PatientAge: ", dicom_header.info.get('PatientAge'))
+            # Check for PatientAge in the DICOM header
+            if dicom_header.info.get('PatientAge', None) is not None:
+                age = re.sub('\D', '', dicom_header.info.get('PatientAge'))
+                print("No custom demographic age uploaded in session info! Trying PatientAge from dicom...")
+                age_raw = dicom_header.info['PatientAge']
 
-            # Parse age and convert to months
-            unit = age_raw[-1].upper()  # Extract the unit (D = Days, W = Weeks, M = Months, Y = Years)
-            numeric_age = int(re.sub('\D', '', age_raw))  # Remove non-numeric characters
-            age_source = 'dicom_age'
-            if unit == 'D':  # Days to months
-                age = numeric_age // 30
-               
-            elif unit == 'W':  # Weeks to months
-                age = numeric_age // 4
-                
-            elif unit == 'M':  # Already in months
-                age = numeric_age
-               
-            elif unit == 'Y':  # Years to months
-                age = numeric_age * 12
-               
-            else:
-                print("Unknown unit for PatientAge. Setting age to None.")
-                age_source, age = None, None
-
-        
-        elif age is not None or int(age) == 0:
-            # If PatientAge is unavailable or invalid, fallback to PatientBirthDate and SeriesDate
-            dob = dicom_header.info.get('PatientBirthDate', None)
-            series_date = dicom_header.get('SeriesDate', None)
-            if dob != None and series_date != None:
-                print("Trying DOB from dicom...")    
-                print("WARNING: This may be inaccurate if false DOB was entered at time of scanning!")
-                # Calculate age at scan
-                # Calculate the difference in months
+                # Parse age and convert to months
+                unit = age_raw[-1].upper()  # Extract the unit (D = Days, W = Weeks, M = Months, Y = Years)
+                print(f"PatientAge raw value: {age_raw}, unit: {unit}")
                 try:
+                    numeric_age = int(re.sub('\D', '', age_raw))  # Remove non-numeric characterq 
+                    age_source = 'dicom_age'
+                    if unit == 'D':  # Days to months
+                        age = numeric_age // 30
+                    
+                    elif unit == 'W':  # Weeks to months
+                        age = numeric_age // 4
+                        
+                    elif unit == 'M':  # Already in months
+                        age = numeric_age
+                    
+                    elif unit == 'Y':  # Years to months
+                        age = numeric_age * 12
+                except TypeError as te:
+                    print(f"Caught a TypeError: {te}")
+                    age_source, age = None, None
+                except Exception as e:
+                    print(f"Error parsing dates from dicom: {e}")
+                    age_source, age = None, None
+
+               
+                
+                else:
+                    print("Unknown unit for PatientAge. Setting age to None.")
+                    age_source, age = None, None
+
+                print(f"PatientAge from dicom: {age_raw} -> {age} months")
+
+            
+            elif age is not None or str(age) == "0":
+                # If PatientAge is unavailable or invalid, fallback to PatientBirthDate and SeriesDate
+                dob = dicom_header.info.get('PatientBirthDate', None)
+                series_date = dicom_header.get('SeriesDate', None)
+                if dob != None and series_date != None:
+                    print("Trying DOB from dicom...")    
+                    print("WARNING: This may be inaccurate if false DOB was entered at time of scanning!")
+                    # Calculate age at scan
+                    # Calculate the difference in months
+                    
                     series_dt = datetime.strptime(series_date, '%Y%m%d')
                     dob_dt = datetime.strptime(dob, '%Y%m%d')
                     age_days = (series_dt - dob_dt).days
@@ -84,24 +97,24 @@ def get_age(session, dicom_header):
                     age = age_days // 30
                     age_source = 'dicom_DOB'
 
-                except ValueError as ve:
-                    print(f"Caught a ValueError: {ve}")
-                    age_source, age = None, None
-                except TypeError as te:
-                    print(f"Caught a TypeError: {te}")
-                    age_source, age = None, None
-                except Exception as e:
-                    print(f"Error parsing dates from dicom: {e}")
-                    age_source, age = None, None
-        
-                # Adjust if the day in series_dt is earlier than the day in dob_dt
-                if series_dt.day < dob_dt.day:
-                    age_source, age = None, None
+                    
+            
+                    # Adjust if the day in series_dt is earlier than the day in dob_dt
+                    if series_dt.day < dob_dt.day:
+                        age_source, age = None, None
 
-            else:
-                print("No valid birthdate or series date found in dicom header. Setting age to None.")
-                age_source, age = None, None
-              
+                else:
+                    print("No valid birthdate or series date found in dicom header. Setting age to None.")
+                    age_source, age = None, None
+        except ValueError as ve:
+            print(f"Caught a ValueError: {ve}")
+            age_source, age = None, None
+        except TypeError as te:
+            print(f"Caught a TypeError: {te}")
+            age_source, age = None, None
+        except Exception as e:
+            print(f"Error parsing dates from dicom: {e}")
+            age_source, age = None, None
 
         try:
             age = float(age)
