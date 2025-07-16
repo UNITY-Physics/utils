@@ -113,35 +113,35 @@ def get_age(session, dicom_header):
                     age_source, age = None, None
 
             else:
-                print("No valid birthdate or series date found in dicom header. Setting age to None.")
+                log.warning("No valid birthdate or series date found in dicom header. Setting age to None.")
                 age_source, age = None, None
     except ValueError as ve:
-        print(f"Caught a ValueError: {ve}")
+        log.exception(f"Caught a ValueError: {ve}")
         age_source, age = None, None
     except TypeError as te:
-        print(f"Caught a TypeError: {te}")
+        log.exception(f"Caught a TypeError: {te}")
         age_source, age = None, None
     except Exception as e:
-        print(f"Error parsing dates from dicom: {e}")
+        log.exception(f"Error parsing dates from dicom: {e}")
         age_source, age = None, None
 
     try:
         age = float(age)
         if age <= 0 or age > 1200:
-            print(f"Age out of expected bounds: {age}")
+            log.warning(f"Age out of expected bounds: {age}")
             age_source, age = None, None
             
     except ValueError as ve:
-        print(f"Caught a ValueError: {ve}")
+        log.exception(f"Caught a ValueError: {ve}")
         age_source, age = None, None
     except TypeError as te:
-        print(f"Caught a TypeError: {te}")
+        log.exception(f"Caught a TypeError: {te}")
         age_source, age = None, None
     except Exception as e:
-        log.error(f"Age not found or not a valid number: {age}". format(e))
+        log.exception(f"Age not found or not a valid number: {age}". format(e))
         age_source, age = None, None
 
-    print(age, age_source)
+    log.info(f"{age}, {age_source}")
     return age, age_source
 
 def demo(context):
@@ -218,7 +218,7 @@ def demo(context):
         if acqs:
             acq = acqs[0]
         # for acq in session.acquisitions():
-            print(acq.label)
+            log.info(acq.label)
             # print(acq.label)
             acq = acq.reload()
             # if 'T2' in acq.label and 'AXI' in acq.label and 'Segmentation' not in acq.label and 'Align' not in acq.label: 
