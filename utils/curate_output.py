@@ -206,7 +206,7 @@ def demo(context):
         age =  session.info.get('age_at_scan_months')
     else:
         acqs = [acq for acq in session.acquisitions() if ('T2' in acq.label or 'T1' in acq.label) and ('AXI' in acq.label or 'SAG' in acq.label or 'COR' in acq.label) and 'Segmentation' not in acq.label and 'Align' not in acq.label]
-        if acq:
+        if acqs:
             acq = acqs[0]
         # for acq in session.acquisitions():
             print(acq.label)
