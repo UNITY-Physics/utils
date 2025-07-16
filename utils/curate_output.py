@@ -50,19 +50,30 @@ def get_age(session, dicom_header):
             unit = age_raw[-1].upper()  # Extract the unit (D = Days, W = Weeks, M = Months, Y = Years)
             print(f"PatientAge raw value: {age_raw}, unit: {unit}")
             try:
-                numeric_age = int(re.sub('\D', '', age_raw))  # Remove non-numeric characterq 
+                numeric_age = re.findall(r'\d+', age_raw)
+                #numeric_age = int(re.sub('\D', '', age_raw))  # Remove non-numeric characterq 
+                
                 age_source = 'dicom_age'
-                if unit == 'D':  # Days to months
-                    age = numeric_age // 30
-                
-                elif unit == 'W':  # Weeks to months
-                    age = numeric_age // 4
+                if numeric_age and unit == 'D':  # Days to months
                     
-                elif unit == 'M':  # Already in months
-                    age = numeric_age
+                    age = int(numeric_age[0]) // 30
                 
-                elif unit == 'Y':  # Years to months
-                    age = numeric_age * 12
+                elif numeric_age and unit == 'W':  # Weeks to months
+                    
+                    age = int(numeric_age[0]) // 4
+                    
+                elif numeric_age and unit == 'M':  # Already in months
+                    
+                    age = int(numeric_age[0])
+                
+                elif numeric_age and unit == 'Y':  # Years to months
+                    
+                    age = int(numeric_age[0]) * 12
+                
+                else:
+                    print("Unknown unit for PatientAge. Setting age to None.")
+                    age_source, age = None, None
+
             except TypeError as te:
                 print(f"Caught a TypeError: {te}")
                 age_source, age = None, None
@@ -72,9 +83,7 @@ def get_age(session, dicom_header):
 
             
             
-            else:
-                print("Unknown unit for PatientAge. Setting age to None.")
-                age_source, age = None, None
+            
 
             print(f"PatientAge from dicom: {age_raw} -> {age} months")
 
