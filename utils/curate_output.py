@@ -39,16 +39,16 @@ def get_age(session, dicom_header):
     #     age =  session.info.get('age_at_scan_months')
     # else:
     try:
-        print("PatientAge: ", dicom_header.info.get('PatientAge'))
+        log.info(f"PatientAge: {dicom_header.info.get('PatientAge')}")
         # Check for PatientAge in the DICOM header
         if dicom_header.info.get('PatientAge', None) is not None:
             age = re.sub('\D', '', dicom_header.info.get('PatientAge'))
-            print("No custom demographic age uploaded in session info! Trying PatientAge from dicom...")
+            log.info(f"No custom demographic age uploaded in session info! Trying PatientAge from dicom...")
             age_raw = dicom_header.info['PatientAge']
 
             # Parse age and convert to months
             unit = age_raw[-1].upper()  # Extract the unit (D = Days, W = Weeks, M = Months, Y = Years)
-            print(f"PatientAge raw value: {age_raw}, unit: {unit}")
+            log.info(f"PatientAge raw value: {age_raw}, unit: {unit}")
             try:
                 numeric_age = re.findall(r'\d+', age_raw)
                 #numeric_age = int(re.sub('\D', '', age_raw))  # Remove non-numeric characterq 
@@ -71,21 +71,21 @@ def get_age(session, dicom_header):
                     age = int(numeric_age[0]) * 12
                 
                 else:
-                    print("Unknown unit for PatientAge. Setting age to None.")
+                    log.warning("Unknown unit for PatientAge. Setting age to None.")
                     age_source, age = None, None
 
             except TypeError as te:
-                print(f"Caught a TypeError: {te}")
+                log.exception(f"Caught a TypeError: {te}")
                 age_source, age = None, None
             except Exception as e:
-                print(f"Error parsing dates from dicom: {e}")
+                log.exception(f"Error parsing dates from dicom: {e}")
                 age_source, age = None, None
 
             
             
             
 
-            print(f"PatientAge from dicom: {age_raw} -> {age} months")
+            log.info(f"PatientAge from dicom: {age_raw} -> {age} months")
 
         
         elif age is None or str(age) == "0":
@@ -93,8 +93,8 @@ def get_age(session, dicom_header):
             dob = dicom_header.info.get('PatientBirthDate', None)
             series_date = dicom_header.get('SeriesDate', None)
             if dob != None and series_date != None:
-                print("Trying DOB from dicom...")    
-                print("WARNING: This may be inaccurate if false DOB was entered at time of scanning!")
+                log.info("Trying DOB from dicom...")    
+                log.warning("WARNING: This may be inaccurate if false DOB was entered at time of scanning!")
                 # Calculate age at scan
                 # Calculate the difference in months
                 
@@ -219,7 +219,6 @@ def demo(context):
             acq = acqs[0]
         # for acq in session.acquisitions():
             log.info(acq.label)
-            # print(acq.label)
             acq = acq.reload()
             # if 'T2' in acq.label and 'AXI' in acq.label and 'Segmentation' not in acq.label and 'Align' not in acq.label: 
             for file_obj in acq.files: # get the files in the acquisition
