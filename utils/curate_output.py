@@ -88,7 +88,7 @@ def get_age(session, dicom_header):
             print(f"PatientAge from dicom: {age_raw} -> {age} months")
 
         
-        elif age is not None or str(age) == "0":
+        elif age is None or str(age) == "0":
             # If PatientAge is unavailable or invalid, fallback to PatientBirthDate and SeriesDate
             dob = dicom_header.info.get('PatientBirthDate', None)
             series_date = dicom_header.get('SeriesDate', None)
