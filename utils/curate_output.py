@@ -212,15 +212,15 @@ def demo(context):
 
     sex,age,age_source, scannerSoftwareVersion = None,None,None, "NA"
 
-    if any(age not in [None, 0, "0"] for age in [session.info.get('childTimepointAge_months'), session.info.get('age_at_scan_months')]):
+    if any(age not in [None, 0, "0"] for age in [session.info.get('childTimepointAge_months',None), session.info.get('age_at_scan_months',None)]):
         age_source = 'custom_info'
-        age =  session.info.get('age_at_scan_months')
+        age =  session.info.get('childTimepointAge_months')
     else:
         acqs = [acq for acq in session.acquisitions() if ('T2' in acq.label or 'T1' in acq.label) and 'Segmentation' not in acq.label and 'Align' not in acq.label]
         if acqs:
             acq = acqs[0]
         # for acq in session.acquisitions():
-            log.info(acq.label)
+            log.info(f"ACQUISITION USED: {acq.label}")
             acq = acq.reload()
             # if 'T2' in acq.label and 'AXI' in acq.label and 'Segmentation' not in acq.label and 'Align' not in acq.label: 
             for file_obj in acq.files: # get the files in the acquisition
