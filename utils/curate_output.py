@@ -5,7 +5,7 @@ from datetime import datetime
 import re
 import os
 import shutil
-
+from dateutil import parser
 import logging
 
 
@@ -98,8 +98,8 @@ def get_age(session, dicom_header):
                 # Calculate age at scan
                 # Calculate the difference in months
                 
-                series_dt = datetime.strptime(series_date, '%Y%m%d')
-                dob_dt = datetime.strptime(dob, '%Y%m%d')
+                series_dt = parser.parse(series_date)
+                dob_dt = parser.parse(dob)
                 age_days = (series_dt - dob_dt).days
 
                 # Convert days to months
@@ -109,7 +109,8 @@ def get_age(session, dicom_header):
                 
         
                 # Adjust if the day in series_dt is earlier than the day in dob_dt
-                if series_dt.day < dob_dt.day:
+                if age_days < 0:
+                    log.error(f"Series date {series_date} is before {dob_dt}. Setting age to None.")
                     age_source, age = None, None
 
             else:
