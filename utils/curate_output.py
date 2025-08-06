@@ -88,10 +88,10 @@ def get_age(session, dicom_header):
             log.info(f"PatientAge from dicom: {age_raw} -> {age} months")
 
         
-        elif age is None or str(age) == "0":
+        if age is None or str(age) == "0":
             # If PatientAge is unavailable or invalid, fallback to PatientBirthDate and SeriesDate
             dob = dicom_header.info.get('PatientBirthDate', None)
-            series_date = dicom_header.get('SeriesDate', None)
+            series_date = dicom_header.info.get('SeriesDate', None)
             if dob != None and series_date != None:
                 log.info("Trying DOB from dicom...")    
                 log.warning("WARNING: This may be inaccurate if false DOB was entered at time of scanning!")
@@ -210,7 +210,8 @@ def demo(context):
     # Some projects may have DOB removed, but may have age at scan in the subject container
 
     sex,age,age_source, scannerSoftwareVersion = None,None,None, "NA"
-    if session.info.get('age_at_scan_months', None) != None and str(session.info.get('age_at_scan_months')) != "0":
+
+    if any(age not in [None, 0, "0"] for age in [session.info.get('childTimepointAge_months'), session.info.get('age_at_scan_months')]):
         age_source = 'custom_info'
         age =  session.info.get('age_at_scan_months')
     else:
@@ -230,7 +231,7 @@ def demo(context):
                     scannerSoftwareVersion = dicom_header.info.get('SoftwareVersions', "NA")
 
                     try:
-                        sex = session_info.get("sex_at_birth", dicom_header.info.get("PatientSex","NA"))
+                        sex = session_info.get("childBiologicalSex", session_info.get("sex_at_birth", dicom_header.info.get("PatientSex","NA")))
                     except:
                         continue
 
